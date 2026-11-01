@@ -1,42 +1,41 @@
+"""A local-first interface for explicit email-list comparisons."""
+
 import streamlit as st
-import pandas as pd
 
-# Streamlit UI
-st.title("Email List Checker - Duplicate Removal")
+from email_lists import compare, export_csv, read_emails
 
-st.write("✅ Upload two CSV files with email lists.")
-st.write("✅ Checks for duplicate emails between the two lists.")
-st.write("✅ Displays and allows downloading of unique emails.")
+st.set_page_config(page_title="Email List Checker", page_icon="📋")
+st.title("Email List Checker")
+st.write("Compare two CSV email lists, review the result and download a clean export.")
+st.caption("List comparison only. This tool does not verify email syntax, deliverability or consent.")
 
-# File upload
-file1 = st.file_uploader("Upload first CSV file", type=["csv"])
-file2 = st.file_uploader("Upload second CSV file", type=["csv"])
+choices = {
+    "Only in one list (exclude shared addresses)": "different",
+    "Merge both lists (keep one copy of every address)": "merged",
+    "Shared by both lists": "shared",
+}
+selection = st.selectbox("Comparison", list(choices))
+first_file = st.file_uploader("First CSV — requires an Email column", type=["csv"], key="first")
+second_file = st.file_uploader("Second CSV — requires an Email column", type=["csv"], key="second")
+st.caption("UTF-8 CSV, up to 5 MB and 100,000 rows per file. Surrounding whitespace and letter case are normalized.")
 
-if file1 and file2:
-    df1 = pd.read_csv(file1)
-    df2 = pd.read_csv(file2)
-
-    # Normalize column names to avoid case sensitivity issues
-    df1.columns = df1.columns.str.strip().str.lower()
-    df2.columns = df2.columns.str.strip().str.lower()
-
-    if 'email' not in df1.columns or 'email' not in df2.columns:
-        st.error("CSV files must contain an 'Email' column!")
+if first_file is not None and second_file is not None:
+    try:
+        first = read_emails(first_file.getvalue())
+        second = read_emails(second_file.getvalue())
+        result = compare(first, second, choices[selection])
+    except ValueError as error:
+        st.error(str(error))
     else:
-        emails1 = set(df1['email'].dropna().str.lower())
-        emails2 = set(df2['email'].dropna().str.lower())
+        columns = st.columns(3)
+        columns[0].metric("First list — distinct addresses", len(first))
+        columns[1].metric("Second list — distinct addresses", len(second))
+        columns[2].metric("Shared addresses", len(first & second))
+        st.write(f"Result: {len(result):,} addresses")
+        st.dataframe({"Email": result}, use_container_width=True)
+        st.download_button(
+            "Download result CSV", data=export_csv(result), file_name="email_comparison.csv", mime="text/csv"
+        )
+        st.caption("Spreadsheet-sensitive values are prefixed with an apostrophe in the CSV export.")
 
-        # Check for duplicates
-        duplicates = emails1.intersection(emails2)
-        unique_emails = emails1.union(emails2) - duplicates
-
-        st.write(f"🔍 Found {len(duplicates)} duplicate emails.")
-        st.write(f"📌 Total unique emails: {len(unique_emails)}")
-
-        # Display the unique emails in a dataframe
-        df_unique = pd.DataFrame({"Unique Emails": list(unique_emails)})
-        st.dataframe(df_unique)
-
-        # Allow download of the unique emails
-        csv = df_unique.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Unique Emails", data=csv, file_name="unique_emails.csv", mime="text/csv")
+st.info("Use data you are authorized to process. In a hosted deployment, uploads are processed on that server. Do not commit real contact lists.")
