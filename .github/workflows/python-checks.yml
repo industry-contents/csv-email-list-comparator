@@ -1,0 +1,25 @@
+name: Python checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Validate Python syntax
+        run: python -m py_compile email_lists.py streamlit_app.py test_email_lists.py
+      - name: Test CSV parsing, comparisons and export safety
+        run: python -m unittest discover -v
