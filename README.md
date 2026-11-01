@@ -1,10 +1,10 @@
-# Email List Checker
+# CSV Email List Comparator
 
-[![Python checks](https://github.com/YJush/YJush-email-verifier-streamlit/actions/workflows/python-checks.yml/badge.svg)](https://github.com/YJush/YJush-email-verifier-streamlit/actions/workflows/python-checks.yml)
+[![Python checks](https://github.com/YJush/csv-email-list-comparator/actions/workflows/python-checks.yml/badge.svg)](https://github.com/YJush/csv-email-list-comparator/actions/workflows/python-checks.yml)
 
-Compare two CSV email lists, review shared addresses and export the result. Built for small marketing and contact-list workflows with Python and Streamlit.
+Compare two CSV email lists, review shared addresses and export the result. Built for marketing and contact-list workflows with Python and Streamlit. It compares lists; it does not check deliverability.
 
-**Status: portfolio prototype with tested comparison logic.** This is a list-comparison tool, not an email-deliverability verifier.
+Built by [Industry Contents](https://industrycontents.com).
 
 ## What it does
 
@@ -47,8 +47,8 @@ lee@example.com
 Use Python 3.11 or 3.12:
 
 ```sh
-git clone https://github.com/YJush/YJush-email-verifier-streamlit.git
-cd YJush-email-verifier-streamlit
+git clone https://github.com/YJush/csv-email-list-comparator.git
+cd csv-email-list-comparator
 python -m venv .venv
 ```
 
@@ -63,38 +63,34 @@ Open the local address printed by Streamlit, choose a comparison mode and upload
 
 ## Test
 
-The comparison module uses the Python standard library, so its tests do not require installing Streamlit:
-
 ```sh
 python -m unittest discover -v
-python -m py_compile email_lists.py streamlit_app.py test_email_lists.py
 ```
 
-Eight local tests passed during the November 2026 portfolio update. They cover comparison modes, normalization and duplicate removal, missing/ambiguous headers, malformed/non-UTF-8 input, upload limits, empty lists, safe CSV exports and invalid modes. The GitHub Actions workflow repeats syntax and unit checks on Python 3.11 and 3.12. A passing unit suite does not establish that a deployed UI is working.
+The comparison module uses only the standard library. Tests cover comparison modes, normalization, duplicate removal, malformed input, upload limits and safe CSV export. GitHub Actions runs them on Python 3.11 and 3.12.
 
 ## Project structure
 
 | File | Purpose |
 | --- | --- |
 | `email_lists.py` | CSV parsing, set operations and safe export; no network calls |
-| `streamlit_app.py` | Uploads, mode selection, metrics and download interface |
-| `test_email_lists.py` | Standard-library regression tests |
-| `.github/workflows/python-checks.yml` | Syntax and unit checks |
-| `requirements.txt` | UI runtime dependency |
-| `.devcontainer/devcontainer.json` | Development-container configuration |
+| `streamlit_app.py` | Upload, mode selection, metrics and download interface |
+| `test_email_lists.py` | Unit tests |
 
 ## Limits and data handling
 
-Each input is limited to 5 MB and 100,000 rows. CSVs must use UTF-8, have consistent row widths and contain exactly one normalized `Email` column. Other columns are ignored. The parser does not validate email syntax, confirm consent, check suppression lists or contact a mailbox/DNS service.
+Each input is limited to 5 MB and 100,000 rows. CSVs must be UTF-8 with exactly one `Email` column; other columns are ignored. Exports prefix formula-sensitive values with an apostrophe to prevent spreadsheet injection.
 
-Values beginning with spreadsheet formula-sensitive characters are prefixed with an apostrophe in downloads. That is an export safeguard and can change the literal cell value. Case and whitespace normalization also intentionally alter source values.
-
-The application has no explicit persistence layer or external API calls. A hosted deployment still receives uploads on its server. Run locally when appropriate, use synthetic data for demonstrations and never commit real contact exports or credentials. Dependencies are not locked to exact versions; a full deployment and dependency audit remain separate work.
+The app makes no external calls and stores nothing. Run it locally for real contact data.
 
 ## Contributing
 
-Describe the workflow problem and include synthetic input with the expected result. Run the checks above before proposing a change. Useful next work includes browser-level UI tests, reproducible dependency locking and a synthetic-data demo. Do not post contact lists or secrets in issues.
+Open an issue with a synthetic input and the expected result. Run the tests before submitting a pull request.
+
+## Security
+
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
-No project license is currently included. Contact the owner before reusing the code; dependencies retain their own licenses.
+[MIT](LICENSE) © Yajush Gupta
