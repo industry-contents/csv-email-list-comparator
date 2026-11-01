@@ -1,6 +1,6 @@
 # CSV Email List Comparator
 
-[![Python checks](https://github.com/YJush/csv-email-list-comparator/actions/workflows/python-checks.yml/badge.svg)](https://github.com/YJush/csv-email-list-comparator/actions/workflows/python-checks.yml)
+[![Python checks](https://github.com/industry-contents/csv-email-list-comparator/actions/workflows/python-checks.yml/badge.svg)](https://github.com/industry-contents/csv-email-list-comparator/actions/workflows/python-checks.yml)
 
 Compare two CSV email lists, review shared addresses and export the result. Built for marketing and contact-list workflows with Python and Streamlit. It compares lists; it does not check deliverability.
 
@@ -47,7 +47,7 @@ lee@example.com
 Use Python 3.11 or 3.12:
 
 ```sh
-git clone https://github.com/YJush/csv-email-list-comparator.git
+git clone https://github.com/industry-contents/csv-email-list-comparator.git
 cd csv-email-list-comparator
 python -m venv .venv
 ```
