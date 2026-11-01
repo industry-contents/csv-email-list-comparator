@@ -1,21 +1,26 @@
 # Email List Checker
 
-A small Python and Streamlit tool for comparing two CSV email lists and exporting addresses that appear in only one list.
+[![Python checks](https://github.com/YJush/YJush-email-verifier-streamlit/actions/workflows/python-checks.yml/badge.svg)](https://github.com/YJush/YJush-email-verifier-streamlit/actions/workflows/python-checks.yml)
 
-**Status: prototype.** Despite the repository's historical name, this application does not verify email deliverability, DNS records or mailbox ownership.
+Compare two CSV email lists, review shared addresses and export the result. Built for small marketing and contact-list workflows with Python and Streamlit.
 
-## Use case
+**Status: portfolio prototype with tested comparison logic.** This is a list-comparison tool, not an email-deliverability verifier.
 
-Compare two campaign or contact-list exports before a marketing workflow. The app highlights shared addresses and produces the symmetric difference between the lists. Use only data you are authorized to process.
+## What it does
 
-## How it works
+- Accepts two UTF-8 CSV files with an `Email` column.
+- Normalizes column names, letter case and surrounding whitespace; removes duplicate and empty values.
+- Offers explicit comparison modes rather than silently choosing a merge rule.
+- Shows distinct-list and overlap counts, then exports results in stable alphabetical order.
+- Rejects malformed, ambiguous or oversized CSV input and neutralizes spreadsheet formula prefixes in exports.
 
-1. Upload two CSV files, each containing an `Email` column. Column names are trimmed and converted to lowercase.
-2. The app drops missing email values, lowercases addresses and creates a set for each file.
-3. It reports the number of addresses shared by both sets.
-4. It exports addresses present in exactly one set as `unique_emails.csv`.
+## Comparison modes
 
-**This is not a normal merge-and-deduplicate operation:** an address that appears in both lists is excluded from the output entirely.
+| Mode | Result |
+| --- | --- |
+| Only in one list | Addresses in either list, excluding addresses shared by both; the original default behavior |
+| Merge both lists | Every address, with one copy of each |
+| Shared by both lists | Addresses present in both lists |
 
 ### Example
 
@@ -35,11 +40,11 @@ sam@example.com
 lee@example.com
 ```
 
-The output contains `alex@example.com` and `lee@example.com`; `sam@example.com` is excluded. Row order is not guaranteed.
+“Only in one list” returns `alex@example.com` and `lee@example.com`. “Merge” returns all three addresses. “Shared” returns `sam@example.com`.
 
 ## Run locally
 
-Install Python 3 and create an isolated environment:
+Use Python 3.11 or 3.12:
 
 ```sh
 git clone https://github.com/YJush/YJush-email-verifier-streamlit.git
@@ -47,39 +52,49 @@ cd YJush-email-verifier-streamlit
 python -m venv .venv
 ```
 
-Activate it with `source .venv/bin/activate` on macOS/Linux or `.venv\Scripts\Activate.ps1` in Windows PowerShell. Then:
+Activate the environment with `source .venv/bin/activate` on macOS/Linux or `.venv\Scripts\Activate.ps1` in Windows PowerShell, then:
 
 ```sh
 python -m pip install -r requirements.txt
 python -m streamlit run streamlit_app.py
 ```
 
-Open the local address printed by Streamlit and upload the two CSV files. No external email-verification API or API key is required.
+Open the local address printed by Streamlit, choose a comparison mode and upload both files. No API key or external verification service is required.
+
+## Test
+
+The comparison module uses the Python standard library, so its tests do not require installing Streamlit:
+
+```sh
+python -m unittest discover -v
+python -m py_compile email_lists.py streamlit_app.py test_email_lists.py
+```
+
+Eight local tests passed during the November 2026 portfolio update. They cover comparison modes, normalization and duplicate removal, missing/ambiguous headers, malformed/non-UTF-8 input, upload limits, empty lists, safe CSV exports and invalid modes. The GitHub Actions workflow repeats syntax and unit checks on Python 3.11 and 3.12. A passing unit suite does not establish that a deployed UI is working.
 
 ## Project structure
 
 | File | Purpose |
 | --- | --- |
-| `streamlit_app.py` | Upload interface, set comparison and CSV download |
-| `requirements.txt` | Python dependencies |
+| `email_lists.py` | CSV parsing, set operations and safe export; no network calls |
+| `streamlit_app.py` | Uploads, mode selection, metrics and download interface |
+| `test_email_lists.py` | Standard-library regression tests |
+| `.github/workflows/python-checks.yml` | Syntax and unit checks |
+| `requirements.txt` | UI runtime dependency |
 | `.devcontainer/devcontainer.json` | Development-container configuration |
 
-The application uses Streamlit and pandas. `dnspython` is listed as a dependency but is not used by the current code.
+## Limits and data handling
 
-## Validation and limitations
+Each input is limited to 5 MB and 100,000 rows. CSVs must use UTF-8, have consistent row widths and contain exactly one normalized `Email` column. Other columns are ignored. The parser does not validate email syntax, confirm consent, check suppression lists or contact a mailbox/DNS service.
 
-Use the synthetic example above to check the expected comparison. No automated test suite is currently included. Dependencies are not version-pinned.
+Values beginning with spreadsheet formula-sensitive characters are prefixed with an apostrophe in downloads. That is an export safeguard and can change the literal cell value. Case and whitespace normalization also intentionally alter source values.
 
-Email values are lowercased but not trimmed, so surrounding whitespace can produce mismatches. Malformed CSV input and non-text email columns are not fully handled. The tool does not check syntax, consent, suppression lists, delivery status or whether an address exists. CSV downloads are not hardened against spreadsheet formula injection; use synthetic data for demonstrations and treat untrusted exports carefully.
-
-## Privacy
-
-The current code has no explicit persistence layer or external API calls. Uploads are processed by the machine running Streamlit. A hosted deployment receives the uploaded data on its server; run locally when appropriate and do not commit real contact lists, exported files or credentials.
+The application has no explicit persistence layer or external API calls. A hosted deployment still receives uploads on its server. Run locally when appropriate, use synthetic data for demonstrations and never commit real contact exports or credentials. Dependencies are not locked to exact versions; a full deployment and dependency audit remain separate work.
 
 ## Contributing
 
-Good next improvements include whitespace normalization, explicit comparison modes, stable output ordering, friendly CSV errors, safe exports and deterministic tests. Include a synthetic input and the expected result when proposing a change.
+Describe the workflow problem and include synthetic input with the expected result. Run the checks above before proposing a change. Useful next work includes browser-level UI tests, reproducible dependency locking and a synthetic-data demo. Do not post contact lists or secrets in issues.
 
 ## License
 
-No project license is currently included. Contact the repository owner before reusing the code; dependencies retain their own licenses.
+No project license is currently included. Contact the owner before reusing the code; dependencies retain their own licenses.
